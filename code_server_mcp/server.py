@@ -25,8 +25,8 @@ async def health_check() -> dict:
         async with httpx.AsyncClient(timeout=5) as client:
             resp = await client.get(f"{CODESERVER_URL}/healthz")
             return {"status": "ok" if resp.status_code == 200 else "degraded", "http_status": resp.status_code}
-    except Exception as e:
-        return {"status": "unreachable", "error": str(e)}
+    except Exception:
+        return {"status": "unreachable", "error": "connection failed"}
 
 
 @mcp.tool()
@@ -65,8 +65,8 @@ def list_extensions() -> dict:
         return {"extensions": extensions, "count": len(extensions)}
     except subprocess.TimeoutExpired:
         return {"error": "timeout", "extensions": []}
-    except Exception as e:
-        return {"error": str(e), "extensions": []}
+    except Exception:
+        return {"error": "internal error", "extensions": []}
 
 
 @mcp.tool()
@@ -89,8 +89,8 @@ def install_extension(extension_id: str) -> dict:
         return {"success": True, "output": result.stdout.strip()}
     except subprocess.TimeoutExpired:
         return {"success": False, "error": "timeout — installation may still be running"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    except Exception:
+        return {"success": False, "error": "internal error"}
 
 
 if __name__ == "__main__":

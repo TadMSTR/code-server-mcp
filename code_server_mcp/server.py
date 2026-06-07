@@ -15,6 +15,7 @@ CONTAINER_NAME = os.environ.get("CODESERVER_CONTAINER", "code-server")
 CODESERVER_BIN = os.environ.get("CODESERVER_BIN", "/app/code-server/bin/code-server")
 
 EXTENSION_ID_RE = re.compile(r"^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+(@[\d.]+)?$")
+ALLOWED_PATH_PREFIXES = ("/home/ted/repos", "/home/ted/docker")
 
 
 @mcp.tool()
@@ -39,6 +40,8 @@ def open_folder_url(path: str) -> dict:
     Returns:
         URL string suitable for sharing in Matrix messages.
     """
+    if not any(path.startswith(p) for p in ALLOWED_PATH_PREFIXES):
+        return {"error": f"path must start with one of: {', '.join(ALLOWED_PATH_PREFIXES)}"}
     # Map host paths to container paths
     if path.startswith("/home/ted/repos"):
         container_path = path.replace("/home/ted/repos", "/repos", 1)

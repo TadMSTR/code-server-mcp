@@ -1,0 +1,1 @@
+"""code-server MCP server."""

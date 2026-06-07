@@ -1,6 +1,7 @@
 """code-server MCP server — wraps code-server for agent use."""
 
 import os
+import re
 import subprocess
 from urllib.parse import quote
 from fastmcp import FastMCP
@@ -12,6 +13,8 @@ CODESERVER_URL = os.environ.get("CODESERVER_URL", "http://127.0.0.1:8443")
 CODESERVER_PUBLIC_URL = os.environ.get("CODESERVER_PUBLIC_URL", "")
 CONTAINER_NAME = os.environ.get("CODESERVER_CONTAINER", "code-server")
 CODESERVER_BIN = os.environ.get("CODESERVER_BIN", "/app/code-server/bin/code-server")
+
+EXTENSION_ID_RE = re.compile(r"^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+(@[\d.]+)?$")
 
 
 @mcp.tool()
@@ -71,6 +74,8 @@ def install_extension(extension_id: str) -> dict:
     Args:
         extension_id: Extension ID in publisher.name format (e.g. ms-python.python)
     """
+    if not EXTENSION_ID_RE.match(extension_id):
+        return {"success": False, "error": "invalid extension_id format — expected publisher.name[@version]"}
     try:
         result = subprocess.run(
             ["docker", "exec", CONTAINER_NAME, CODESERVER_BIN, "--install-extension", extension_id],

@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from urllib.parse import quote
 from fastmcp import FastMCP
 import httpx
 
@@ -40,7 +41,7 @@ def open_folder_url(path: str) -> dict:
         container_path = path.replace("/home/ted/repos", "/repos", 1)
     else:
         container_path = path
-    url = f"{CODESERVER_PUBLIC_URL}/?folder={container_path}"
+    url = f"{CODESERVER_PUBLIC_URL}/?folder={quote(container_path, safe='/')}"
     return {"url": url, "container_path": container_path}
 
 

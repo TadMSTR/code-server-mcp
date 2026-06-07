@@ -8,7 +8,7 @@ import httpx
 mcp = FastMCP("code-server-mcp")
 
 CODESERVER_URL = os.environ.get("CODESERVER_URL", "http://127.0.0.1:8443")
-CODESERVER_PUBLIC_URL = os.environ.get("CODESERVER_PUBLIC_URL", "https://code.helmforge.me")
+CODESERVER_PUBLIC_URL = os.environ.get("CODESERVER_PUBLIC_URL", "")
 CONTAINER_NAME = os.environ.get("CODESERVER_CONTAINER", "code-server")
 CODESERVER_BIN = os.environ.get("CODESERVER_BIN", "/app/code-server/bin/code-server")
 

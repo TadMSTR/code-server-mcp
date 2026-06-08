@@ -1,15 +1,15 @@
 # code-server-mcp
 
-MCP server wrapping [code-server](https://github.com/coder/code-server) (VS Code in browser) for agent use on forge.
+MCP server wrapping [code-server](https://github.com/coder/code-server) (VS Code in browser) for agent use on forge. Gives agents the ability to health-check the IDE, generate deep-link URLs for Matrix messages, and manage VS Code extensions — all without direct Docker socket access.
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `health_check()` | Checks `/healthz` on code-server; returns `ok`, `degraded`, or `unreachable` |
-| `open_folder_url(path)` | Generates a `https://code.helmforge.me/?folder=...` deep-link URL for a host path |
-| `list_extensions()` | Lists installed VS Code extensions via `docker exec` |
-| `install_extension(extension_id)` | Installs an extension by ID (e.g. `ms-python.python`) via `docker exec` |
+| Tool | Key Parameters | Returns | Description |
+|------|---------------|---------|-------------|
+| `health_check` | — | `{status, http_status}` | Checks `/healthz` on code-server; status is `ok`, `degraded`, or `unreachable` |
+| `open_folder_url` | `path` (absolute host path) | `{url, container_path}` | Generates a deep-link URL; path must start with `/home/ted/repos` or `/home/ted/docker` |
+| `list_extensions` | — | `{extensions[], count}` | Lists installed VS Code extensions via `docker exec` |
+| `install_extension` | `extension_id` (publisher.name[@version]) | `{success, output\|error}` | Installs a marketplace extension; ID validated against `^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+(@[\d.]+)?$` |
 
 ## Requirements
 
@@ -72,11 +72,48 @@ args:
   extension_id: ms-python.python
 ```
 
+## Deployment
+
+```bash
+# Install into a venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Start with PM2
+pm2 start ecosystem.config.js
+pm2 save
+```
+
+The `ecosystem.config.js` sets all required env vars for forge deployment (port 8498, streamable-http transport, localhost bind).
+
+## Observability
+
+- Logs: `~/logs/code-server-mcp-out.log` (PM2 managed, timestamped)
+- `LOG_LEVEL` env var controls verbosity (default: `INFO`)
+- No OTEL instrumentation — lightweight passthrough server
+
+## Security
+
+- **Path allowlist**: `open_folder_url` only accepts paths under `/home/ted/repos` or `/home/ted/docker`
+- **Extension ID regex**: `install_extension` validates against marketplace ID format before executing
+- **No direct socket access**: Uses `docker exec` to the container, not the Docker socket
+- **Localhost only**: MCP server binds to `127.0.0.1:8498` — external access via scoped-mcp only
+
+## scoped-mcp access
+
+| Agent | Access |
+|-------|--------|
+| sysadmin | Full (all 4 tools) |
+| developer | Full (all 4 tools) |
+| research | `install_extension` denied |
+| writer | Not wired |
+| security | Not wired |
+
 ## Notes
 
 - `open_folder_url` maps `/home/ted/repos` → `/repos` to match the container's volume mount. Paths outside this prefix are passed through unchanged.
 - `install_extension` has a 60s timeout. For large extensions or slow mirrors, run the install directly on forge if the MCP call times out.
-- The MCP server binds to `127.0.0.1` only — no direct external access. Access is via scoped-mcp.
 
 ## License
 
